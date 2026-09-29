@@ -1,4 +1,4 @@
-using SpotifeiFamilia.Data.Repositories;
+using SpotifeiFamilia.Business;
 using SpotifeiFamilia.Views;
 
 namespace SpotifeiFamilia.Controllers;
@@ -35,16 +35,16 @@ public class RestricaoController(int usuarioId)
     {
         try
         {
-            view.ExibirRestricoes(FamiliaRepository.ListarRestricoes(contaFilhaId));
+            view.ExibirRestricoes(RestricaoBusiness.ListarRestricoes(contaFilhaId));
 
-            int? limiteDiario = MusicaRepository.ObterLimiteDiario(contaFilhaId);
+            int? limiteDiario = RestricaoBusiness.ObterLimiteDiario(contaFilhaId);
             if (limiteDiario == null)
             {
                 view.SemLimiteDiario();
             }
             else
             {
-                int reproduzidasHoje = MusicaRepository.ContarReproduzidasHoje(contaFilhaId);
+                int reproduzidasHoje = RestricaoBusiness.ContarReproduzidasHoje(contaFilhaId);
                 view.ExibirLimiteDiario(reproduzidasHoje, limiteDiario.Value);
             }
         }
@@ -60,7 +60,7 @@ public class RestricaoController(int usuarioId)
 
         try
         {
-            var encontrados = FamiliaRepository.BuscarArtistasPorNome(nome);
+            var encontrados = FamiliaBusiness.BuscarArtistasPorNome(nome);
             if (encontrados.Count == 0)
             {
                 view.ArtistaNaoEncontrado();
@@ -84,13 +84,13 @@ public class RestricaoController(int usuarioId)
                 artistaId = encontrados[0].Id;
             }
 
-            if (FamiliaRepository.ArtistaJaBloqueado(contaFilhaId, artistaId))
+            if (RestricaoBusiness.ArtistaJaBloqueado(contaFilhaId, artistaId))
             {
                 view.ArtistaJaBloqueado();
                 return;
             }
 
-            FamiliaRepository.BloquearArtista(contaFilhaId, artistaId);
+            RestricaoBusiness.BloquearArtista(contaFilhaId, artistaId);
             view.ArtistaBloqueado();
         }
         catch (Exception ex)
@@ -106,7 +106,7 @@ public class RestricaoController(int usuarioId)
 
         try
         {
-            int linhas = FamiliaRepository.DesbloquearArtista(contaFilhaId, artistaId.Value);
+            int linhas = RestricaoBusiness.DesbloquearArtista(contaFilhaId, artistaId.Value);
             view.ArtistaDesbloqueado(linhas > 0);
         }
         catch (Exception ex)
@@ -119,13 +119,13 @@ public class RestricaoController(int usuarioId)
     {
         try
         {
-            if (FamiliaRepository.ExplicitoJaBloqueado(contaFilhaId))
+            if (RestricaoBusiness.ExplicitoJaBloqueado(contaFilhaId))
             {
                 view.ExplicitoJaBloqueado();
                 return;
             }
 
-            FamiliaRepository.BloquearExplicito(contaFilhaId);
+            RestricaoBusiness.BloquearExplicito(contaFilhaId);
             view.ExplicitoBloqueado();
         }
         catch (Exception ex)
@@ -138,7 +138,7 @@ public class RestricaoController(int usuarioId)
     {
         try
         {
-            int linhas = FamiliaRepository.DesbloquearExplicito(contaFilhaId);
+            int linhas = RestricaoBusiness.DesbloquearExplicito(contaFilhaId);
             view.ExplicitoDesbloqueado(linhas > 0);
         }
         catch (Exception ex)
@@ -147,18 +147,16 @@ public class RestricaoController(int usuarioId)
         }
     }
 
-    // Define (ou remove) o limite diário de reprodução de músicas para a conta filha.
     private void DefinirLimiteDiario(int contaFilhaId)
     {
         try
         {
-            view.ExibirLimiteAtual(MusicaRepository.ObterLimiteDiario(contaFilhaId));
+            view.ExibirLimiteAtual(RestricaoBusiness.ObterLimiteDiario(contaFilhaId));
 
             int? novoLimite = view.LerNovoLimite();
             if (novoLimite == null) return;
 
-            // 0 significa "sem limite" (grava NULL); qualquer valor > 0 é o novo limite
-            FamiliaRepository.DefinirLimiteDiario(contaFilhaId, novoLimite == 0 ? null : novoLimite);
+            RestricaoBusiness.DefinirLimiteDiario(contaFilhaId, novoLimite == 0 ? null : novoLimite);
             view.LimiteAtualizado();
         }
         catch (Exception ex)

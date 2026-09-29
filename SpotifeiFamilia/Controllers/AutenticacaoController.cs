@@ -1,15 +1,15 @@
-using SpotifeiFamilia.Data.Repositories;
+using SpotifeiFamilia.Business;
 using SpotifeiFamilia.Model;
-using SpotifeiFamilia.Services;
+using SpotifeiFamilia.Service;
 using SpotifeiFamilia.Views;
 
 namespace SpotifeiFamilia.Controllers;
 
 public class AutenticacaoController
 {
-    private const int MAX_TENTATIVAS = 5;
-    private const int TEMPO_BLOQUEIO_MINUTOS = 120; // 2 horas
-    private const int MAX_TENTATIVAS_2FA = 3;
+    private const int MAX_TENTATIVAS = AutenticacaoBusiness.MAX_TENTATIVAS;
+    private const int TEMPO_BLOQUEIO_MINUTOS = AutenticacaoBusiness.TEMPO_BLOQUEIO_MINUTOS;
+    private const int MAX_TENTATIVAS_2FA = AutenticacaoBusiness.MAX_TENTATIVAS_2FA;
 
     private readonly AutenticacaoView view = new();
     private readonly TotpService totp = new();
@@ -42,30 +42,16 @@ public class AutenticacaoController
 
         try
         {
-            int? planoId = PlanoRepository.BuscarIdPorNome(nomePlano);
-            if (planoId == null)
-            {
-                view.PlanoNaoEncontrado(nomePlano.ToString());
-                return;
-            }
-
-            if (!totp.ConfigurarNovoTotp(email, out string totpSecret))
+            AutenticacaoBusiness.RegistrarUsuario(nome, email, cpf, senha, nomePlano, totp);
+            view.CadastroSucesso();
+        }
+        catch (InvalidOperationException ex)
+        {
+            view.PlanoNaoEncontrado(nomePlano.ToString());
+            if (ex.Message.Contains("2FA"))
             {
                 view.CadastroCancelado2FAObrigatorio();
-                return;
             }
-
-            UsuarioRepository.Cadastrar(new Usuario
-            {
-                NomeUsuario = nome,
-                Cpf = cpf,
-                Email = email,
-                Senha = senha,
-                TotpSecret = totpSecret,
-                PlanoId = planoId
-            });
-
-            view.CadastroSucesso();
         }
         catch (Exception ex)
         {
@@ -73,8 +59,6 @@ public class AutenticacaoController
         }
     }
 
-    // Repete só o login (sem voltar pro menu principal) quando o email/senha
-    // estão errados mas a conta ainda não foi bloqueada.
     public Usuario? Login()
     {
         while (true)
@@ -87,14 +71,13 @@ public class AutenticacaoController
 
             try
             {
-                var usuario = UsuarioRepository.BuscarPorEmail(email);
+                var usuario = AutenticacaoBusiness.BuscarUsuario(email);
                 if (usuario == null)
                 {
                     view.CredenciaisInvalidas();
                     return null;
                 }
 
-                // Bloqueio manual/permanente feito pelo administrador direto no banco.
                 if (usuario.Bloqueado)
                 {
                     view.ContaBloqueadaPermanente();
@@ -104,42 +87,36 @@ public class AutenticacaoController
                 var agora = DateTime.Now;
                 int tentativas = usuario.TentativasLogin;
 
-                // Bloqueio temporário por excesso de tentativas ainda dentro do prazo.
                 if (usuario.BloqueadoAte.HasValue && usuario.BloqueadoAte.Value > agora)
                 {
                     view.ContaBloqueadaTemporaria(usuario.BloqueadoAte.Value - agora, usuario.BloqueadoAte.Value);
                     return null;
                 }
 
-                // Se havia um bloqueio temporário e o prazo já passou, libera a conta antes de seguir.
                 if (usuario.BloqueadoAte.HasValue && usuario.BloqueadoAte.Value <= agora)
                 {
-                    UsuarioRepository.ResetarTentativas(usuario.Id);
+                    AutenticacaoBusiness.ResetarTentativas(usuario.Id);
                     tentativas = 0;
                 }
 
-                // Senha incorreta: incrementa tentativas e, ao atingir o limite, bloqueia.
-                if (senha != usuario.Senha)
+                if (!AutenticacaoBusiness.SenhaCorreta(usuario, senha))
                 {
                     tentativas++;
 
                     if (tentativas >= MAX_TENTATIVAS)
                     {
-                        UsuarioRepository.Bloquear(usuario.Id, TEMPO_BLOQUEIO_MINUTOS);
+                        AutenticacaoBusiness.BloquearConta(usuario.Id);
                         view.LimiteTentativasAtingido(TEMPO_BLOQUEIO_MINUTOS);
                         return null;
                     }
 
-                    UsuarioRepository.IncrementarTentativas(usuario.Id, tentativas);
+                    AutenticacaoBusiness.RegistrarFalhaLogin(usuario.Id, tentativas);
                     view.RestamTentativas(MAX_TENTATIVAS - tentativas);
-                    continue; // deixa tentar de novo sem voltar pro menu principal
+                    continue;
                 }
 
-                // Senha correta: zera o contador de tentativas e qualquer bloqueio temporário.
-                UsuarioRepository.ResetarTentativas(usuario.Id);
+                AutenticacaoBusiness.ResetarTentativas(usuario.Id);
 
-                // Usuários cadastrados antes do 2FA existir ainda não têm um segredo salvo:
-                // exigimos a configuração agora, no primeiro login.
                 if (string.IsNullOrEmpty(usuario.TotpSecret))
                 {
                     if (!totp.ConfigurarNovoTotp(email, out string novoSecret))
@@ -148,7 +125,7 @@ public class AutenticacaoController
                         return null;
                     }
 
-                    UsuarioRepository.AtualizarTotpSecret(usuario.Id, novoSecret);
+                    AutenticacaoBusiness.AtualizarTotpSecret(usuario.Id, novoSecret);
                 }
                 else
                 {

@@ -1,5 +1,4 @@
-using SpotifeiFamilia.Data.Repositories;
-using SpotifeiFamilia.Model;
+using SpotifeiFamilia.Business;
 using SpotifeiFamilia.Views;
 
 namespace SpotifeiFamilia.Controllers;
@@ -8,7 +7,6 @@ public class FamiliaController(int usuarioId)
 {
     private readonly FamiliaView view = new();
 
-    // Ponto de entrada: reautentica e checa se o usuário pode gerenciar família
     public void Executar()
     {
         if (!Reautenticar())
@@ -41,14 +39,13 @@ public class FamiliaController(int usuarioId)
         }
     }
 
-    // Pede a senha novamente antes de liberar acesso ao painel de família
     private bool Reautenticar()
     {
         string senha = view.LerSenhaConfirmacao();
 
         try
         {
-            return UsuarioRepository.VerificarSenha(usuarioId, senha);
+            return FamiliaBusiness.Reautenticar(usuarioId, senha);
         }
         catch (Exception ex)
         {
@@ -57,28 +54,11 @@ public class FamiliaController(int usuarioId)
         }
     }
 
-    // Regra de negócio: só titular (sem responsavel_id) com plano PREMIUM pode gerenciar família
     private bool PodeGerenciarFamilia(out string motivo)
     {
-        motivo = "";
-
         try
         {
-            var (ehDependente, nomePlano) = FamiliaRepository.ObterInfoPermissao(usuarioId);
-
-            if (ehDependente)
-            {
-                motivo = "Contas dependentes não podem gerenciar o Spotifei Família.";
-                return false;
-            }
-
-            if (nomePlano != nameof(NomePlano.PREMIUM))
-            {
-                motivo = "O Spotifei Família está disponível apenas para o plano PREMIUM.";
-                return false;
-            }
-
-            return true;
+            return FamiliaBusiness.PodeGerenciarFamilia(usuarioId, out motivo);
         }
         catch (Exception ex)
         {
@@ -91,7 +71,7 @@ public class FamiliaController(int usuarioId)
     {
         try
         {
-            view.ExibirDependentes(FamiliaRepository.ListarDependentes(usuarioId));
+            view.ExibirDependentes(FamiliaBusiness.ListarDependentes(usuarioId));
         }
         catch (Exception ex)
         {
@@ -104,7 +84,6 @@ public class FamiliaController(int usuarioId)
         string? nome = view.LerNomeDependente();
         if (nome == null) { view.CadastroDependenteCancelado(); return; }
 
-        // E-mail é exigido porque o login autentica por e-mail + senha, igual para contas pai e filho.
         string? email = view.LerEmailDependente();
         if (email == null) { view.CadastroDependenteCancelado(); return; }
 
@@ -113,7 +92,7 @@ public class FamiliaController(int usuarioId)
 
         try
         {
-            FamiliaRepository.AdicionarDependente(usuarioId, nome, email, senha);
+            FamiliaBusiness.AdicionarDependente(usuarioId, nome, email, senha);
             view.DependenteAdicionado();
         }
         catch (Exception ex)
@@ -129,7 +108,7 @@ public class FamiliaController(int usuarioId)
 
         try
         {
-            view.DependenteRemovido(FamiliaRepository.RemoverDependente(id.Value, usuarioId));
+            view.DependenteRemovido(FamiliaBusiness.RemoverDependente(id.Value, usuarioId));
         }
         catch (Exception ex)
         {
@@ -137,20 +116,18 @@ public class FamiliaController(int usuarioId)
         }
     }
 
-    // Lista os filhos do responsável logado e pede pra escolher um, confirmando
-    // que o ID pertence a essa família antes de liberar.
     internal int? SelecionarDependente()
     {
         try
         {
-            var dependentes = FamiliaRepository.ListarDependentes(usuarioId);
+            var dependentes = FamiliaBusiness.ListarDependentes(usuarioId);
             view.ExibirDependentesParaSelecao(dependentes);
             if (dependentes.Count == 0) return null;
 
             int? contaFilhaId = view.LerIdMembro();
             if (contaFilhaId == null) return null;
 
-            if (!FamiliaRepository.EhDependenteDe(contaFilhaId.Value, usuarioId))
+            if (!FamiliaBusiness.EhDependenteDe(contaFilhaId.Value, usuarioId))
             {
                 view.NaoEhMembroDaFamilia();
                 return null;
@@ -172,7 +149,7 @@ public class FamiliaController(int usuarioId)
 
         try
         {
-            view.ExibirHistorico(HistoricoRepository.ListarPorUsuario(contaFilhaId.Value));
+            view.ExibirHistorico(FamiliaBusiness.ListarHistoricoPorUsuario(contaFilhaId.Value));
         }
         catch (Exception ex)
         {

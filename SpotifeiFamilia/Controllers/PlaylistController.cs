@@ -1,4 +1,4 @@
-using SpotifeiFamilia.Data.Repositories;
+using SpotifeiFamilia.Business;
 using SpotifeiFamilia.Views;
 
 namespace SpotifeiFamilia.Controllers;
@@ -31,7 +31,7 @@ public class PlaylistController(int usuarioId)
     {
         try
         {
-            view.ExibirPlaylists(PlaylistRepository.ListarPorUsuario(usuarioId));
+            view.ExibirPlaylists(PlaylistBusiness.ListarPorUsuario(usuarioId));
         }
         catch (Exception ex)
         {
@@ -45,7 +45,7 @@ public class PlaylistController(int usuarioId)
 
         try
         {
-            PlaylistRepository.Criar(usuarioId, nome);
+            PlaylistBusiness.Criar(usuarioId, nome);
             view.PlaylistCriada();
         }
         catch (Exception ex)
@@ -61,13 +61,13 @@ public class PlaylistController(int usuarioId)
 
         try
         {
-            if (!PlaylistRepository.PertenceAoUsuario(playlistId.Value, usuarioId))
+            if (!PlaylistBusiness.PertenceAoUsuario(playlistId.Value, usuarioId))
             {
                 view.PlaylistNaoEncontrada();
                 return;
             }
 
-            view.ExibirMusicasPlaylist(MusicaRepository.MusicasDaPlaylistPermitidas(usuarioId, playlistId.Value));
+            view.ExibirMusicasPlaylist(MusicaBusiness.MusicasDaPlaylistPermitidas(usuarioId, playlistId.Value));
         }
         catch (Exception ex)
         {
@@ -85,13 +85,13 @@ public class PlaylistController(int usuarioId)
 
         try
         {
-            if (!PlaylistRepository.PertenceAoUsuario(playlistId.Value, usuarioId))
+            if (!PlaylistBusiness.PertenceAoUsuario(playlistId.Value, usuarioId))
             {
                 view.PlaylistNaoEncontrada();
                 return;
             }
 
-            PlaylistRepository.AdicionarMusica(playlistId.Value, trackId.Value);
+            PlaylistBusiness.AdicionarMusica(playlistId.Value, trackId.Value);
             view.MusicaAdicionadaPlaylist();
         }
         catch (Exception ex)

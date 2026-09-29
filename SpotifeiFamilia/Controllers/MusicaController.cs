@@ -1,4 +1,4 @@
-using SpotifeiFamilia.Data.Repositories;
+using SpotifeiFamilia.Business;
 using SpotifeiFamilia.Views;
 
 namespace SpotifeiFamilia.Controllers;
@@ -11,7 +11,7 @@ public class MusicaController(int usuarioId)
     {
         try
         {
-            view.ExibirMusicas(MusicaRepository.Listar(usuarioId));
+            view.ExibirMusicas(MusicaBusiness.Listar(usuarioId));
         }
         catch (Exception ex)
         {
@@ -25,7 +25,7 @@ public class MusicaController(int usuarioId)
 
         try
         {
-            view.ExibirResultadosBusca(MusicaRepository.Buscar(usuarioId, busca));
+            view.ExibirResultadosBusca(MusicaBusiness.Buscar(usuarioId, busca));
         }
         catch (Exception ex)
         {
@@ -33,8 +33,6 @@ public class MusicaController(int usuarioId)
         }
     }
 
-    // Registra a reprodução no histórico, respeitando as restrições de conteúdo
-    // e o limite diário configurados para essa conta.
     public void ReproduzirMusica()
     {
         int? trackId = view.LerIdMusica();
@@ -42,10 +40,10 @@ public class MusicaController(int usuarioId)
 
         try
         {
-            int? limiteDiario = MusicaRepository.ObterLimiteDiario(usuarioId);
+            int? limiteDiario = MusicaBusiness.ObterLimiteDiario(usuarioId);
             if (limiteDiario != null)
             {
-                int reproduzidasHoje = MusicaRepository.ContarReproduzidasHoje(usuarioId);
+                int reproduzidasHoje = MusicaBusiness.ContarReproduzidasHoje(usuarioId);
                 if (reproduzidasHoje >= limiteDiario)
                 {
                     view.LimiteDiarioAtingido(limiteDiario.Value);
@@ -53,14 +51,14 @@ public class MusicaController(int usuarioId)
                 }
             }
 
-            var musica = MusicaRepository.BuscarPermitidaPorId(usuarioId, trackId.Value);
+            var musica = MusicaBusiness.BuscarPermitidaPorId(usuarioId, trackId.Value);
             if (musica == null)
             {
                 view.MusicaNaoEncontrada();
                 return;
             }
 
-            MusicaRepository.RegistrarReproducao(usuarioId, trackId.Value);
+            MusicaBusiness.RegistrarReproducao(usuarioId, trackId.Value);
             view.Reproduzindo(musica.Titulo);
         }
         catch (Exception ex)

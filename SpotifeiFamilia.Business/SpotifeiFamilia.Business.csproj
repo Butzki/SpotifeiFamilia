@@ -1,21 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\SpotifeiFamilia.Business\SpotifeiFamilia.Business.csproj" />
     <ProjectReference Include="..\SpotifeiFamilia.Data\SpotifeiFamilia.Data.csproj" />
     <ProjectReference Include="..\SpotifeiFamilia.Model\SpotifeiFamilia.Model.csproj" />
     <ProjectReference Include="..\SpotifeiFamilia.Service\SpotifeiFamilia.Service.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-  </ItemGroup>
-
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
