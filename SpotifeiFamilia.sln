@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpotifeiFamilia.Business", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpotifeiFamilia.Service", "SpotifeiFamilia.Service\SpotifeiFamilia.Service.csproj", "{B9375986-15A4-4566-9A0F-C865321DA402}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpotifeiFamilia.WebApi", "SpotifeiFamilia.WebApi\SpotifeiFamilia.WebApi.csproj", "{6EA658AA-5D17-432E-B912-F8B360C631FE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -83,6 +85,18 @@ Global
 		{B9375986-15A4-4566-9A0F-C865321DA402}.Release|x64.Build.0 = Release|Any CPU
 		{B9375986-15A4-4566-9A0F-C865321DA402}.Release|x86.ActiveCfg = Release|Any CPU
 		{B9375986-15A4-4566-9A0F-C865321DA402}.Release|x86.Build.0 = Release|Any CPU
+		{6EA658AA-5D17-432E-B912-F8B360C631FE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6EA658AA-5D17-432E-B912-F8B360C631FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6EA658AA-5D17-432E-B912-F8B360C631FE}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{6EA658AA-5D17-432E-B912-F8B360C631FE}.Debug|x64.Build.0 = Debug|Any CPU
+		{6EA658AA-5D17-432E-B912-F8B360C631FE}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6EA658AA-5D17-432E-B912-F8B360C631FE}.Debug|x86.Build.0 = Debug|Any CPU
+		{6EA658AA-5D17-432E-B912-F8B360C631FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6EA658AA-5D17-432E-B912-F8B360C631FE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6EA658AA-5D17-432E-B912-F8B360C631FE}.Release|x64.ActiveCfg = Release|Any CPU
+		{6EA658AA-5D17-432E-B912-F8B360C631FE}.Release|x64.Build.0 = Release|Any CPU
+		{6EA658AA-5D17-432E-B912-F8B360C631FE}.Release|x86.ActiveCfg = Release|Any CPU
+		{6EA658AA-5D17-432E-B912-F8B360C631FE}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
