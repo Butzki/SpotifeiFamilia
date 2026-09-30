@@ -91,7 +91,7 @@ public class PlaylistController(int usuarioId)
                 return;
             }
 
-            PlaylistBusiness.AdicionarMusica(playlistId.Value, trackId.Value);
+            PlaylistBusiness.AdicionarMusica(usuarioId, playlistId.Value, trackId.Value);
             view.MusicaAdicionadaPlaylist();
         }
         catch (Exception ex)

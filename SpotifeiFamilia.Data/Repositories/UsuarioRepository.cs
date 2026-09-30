@@ -17,6 +17,26 @@ public class UsuarioRepository
         return context.Usuarios.FirstOrDefault(u => u.Id == id);
     }
 
+    public static bool EmailJaCadastrado(string email)
+    {
+        using var context = new SpotifeiFamiliaContext();
+        return context.Usuarios.Any(u => u.Email == email);
+    }
+
+    public static bool CpfJaCadastrado(string cpf)
+    {
+        using var context = new SpotifeiFamiliaContext();
+        return context.Usuarios.Any(u => u.Cpf == cpf);
+    }
+
+    public static void AtualizarSenha(int usuarioId, string senhaHash)
+    {
+        using var context = new SpotifeiFamiliaContext();
+        var usuario = context.Usuarios.First(u => u.Id == usuarioId);
+        usuario.Senha = senhaHash;
+        context.SaveChanges();
+    }
+
     public static void Cadastrar(Usuario usuario)
     {
         using var context = new SpotifeiFamiliaContext();
@@ -56,11 +76,5 @@ public class UsuarioRepository
         var usuario = context.Usuarios.First(u => u.Id == usuarioId);
         usuario.TotpSecret = secret;
         context.SaveChanges();
-    }
-
-    public static bool VerificarSenha(int usuarioId, string senha)
-    {
-        using var context = new SpotifeiFamiliaContext();
-        return context.Usuarios.Any(u => u.Id == usuarioId && u.Senha == senha);
     }
 }

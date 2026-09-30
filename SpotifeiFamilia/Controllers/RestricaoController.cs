@@ -35,16 +35,16 @@ public class RestricaoController(int usuarioId)
     {
         try
         {
-            view.ExibirRestricoes(RestricaoBusiness.ListarRestricoes(contaFilhaId));
+            view.ExibirRestricoes(RestricaoBusiness.ListarRestricoes(usuarioId, contaFilhaId));
 
-            int? limiteDiario = RestricaoBusiness.ObterLimiteDiario(contaFilhaId);
+            int? limiteDiario = RestricaoBusiness.ObterLimiteDiario(usuarioId, contaFilhaId);
             if (limiteDiario == null)
             {
                 view.SemLimiteDiario();
             }
             else
             {
-                int reproduzidasHoje = RestricaoBusiness.ContarReproduzidasHoje(contaFilhaId);
+                int reproduzidasHoje = RestricaoBusiness.ContarReproduzidasHoje(usuarioId, contaFilhaId);
                 view.ExibirLimiteDiario(reproduzidasHoje, limiteDiario.Value);
             }
         }
@@ -84,13 +84,13 @@ public class RestricaoController(int usuarioId)
                 artistaId = encontrados[0].Id;
             }
 
-            if (RestricaoBusiness.ArtistaJaBloqueado(contaFilhaId, artistaId))
+            if (RestricaoBusiness.ArtistaJaBloqueado(usuarioId, contaFilhaId, artistaId))
             {
                 view.ArtistaJaBloqueado();
                 return;
             }
 
-            RestricaoBusiness.BloquearArtista(contaFilhaId, artistaId);
+            RestricaoBusiness.BloquearArtista(usuarioId, contaFilhaId, artistaId);
             view.ArtistaBloqueado();
         }
         catch (Exception ex)
@@ -106,7 +106,7 @@ public class RestricaoController(int usuarioId)
 
         try
         {
-            int linhas = RestricaoBusiness.DesbloquearArtista(contaFilhaId, artistaId.Value);
+            int linhas = RestricaoBusiness.DesbloquearArtista(usuarioId, contaFilhaId, artistaId.Value);
             view.ArtistaDesbloqueado(linhas > 0);
         }
         catch (Exception ex)
@@ -119,13 +119,13 @@ public class RestricaoController(int usuarioId)
     {
         try
         {
-            if (RestricaoBusiness.ExplicitoJaBloqueado(contaFilhaId))
+            if (RestricaoBusiness.ExplicitoJaBloqueado(usuarioId, contaFilhaId))
             {
                 view.ExplicitoJaBloqueado();
                 return;
             }
 
-            RestricaoBusiness.BloquearExplicito(contaFilhaId);
+            RestricaoBusiness.BloquearExplicito(usuarioId, contaFilhaId);
             view.ExplicitoBloqueado();
         }
         catch (Exception ex)
@@ -138,7 +138,7 @@ public class RestricaoController(int usuarioId)
     {
         try
         {
-            int linhas = RestricaoBusiness.DesbloquearExplicito(contaFilhaId);
+            int linhas = RestricaoBusiness.DesbloquearExplicito(usuarioId, contaFilhaId);
             view.ExplicitoDesbloqueado(linhas > 0);
         }
         catch (Exception ex)
@@ -151,12 +151,12 @@ public class RestricaoController(int usuarioId)
     {
         try
         {
-            view.ExibirLimiteAtual(RestricaoBusiness.ObterLimiteDiario(contaFilhaId));
+            view.ExibirLimiteAtual(RestricaoBusiness.ObterLimiteDiario(usuarioId, contaFilhaId));
 
             int? novoLimite = view.LerNovoLimite();
             if (novoLimite == null) return;
 
-            RestricaoBusiness.DefinirLimiteDiario(contaFilhaId, novoLimite == 0 ? null : novoLimite);
+            RestricaoBusiness.DefinirLimiteDiario(usuarioId, contaFilhaId, novoLimite == 0 ? null : novoLimite);
             view.LimiteAtualizado();
         }
         catch (Exception ex)

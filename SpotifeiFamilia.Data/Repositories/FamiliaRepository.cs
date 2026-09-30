@@ -68,6 +68,12 @@ public class FamiliaRepository
         return context.Artistas.Where(a => a.NomeArtista.Contains(nome)).ToList();
     }
 
+    public static bool ArtistaExiste(int artistaId)
+    {
+        using var context = new SpotifeiFamiliaContext();
+        return context.Artistas.Any(a => a.Id == artistaId);
+    }
+
     public static List<(RestricaoConta Restricao, string? NomeArtista)> ListarRestricoes(int contaFilhaId)
     {
         using var context = new SpotifeiFamiliaContext();

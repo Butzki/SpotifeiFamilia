@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using SpotifeiFamilia.Business;
 
 namespace SpotifeiFamilia.Views;
 
@@ -10,13 +11,13 @@ public class AutenticacaoView
         Console.WriteLine("\n--- CADASTRO DE USUÁRIO ---");
     }
 
-    public string? LerNome() => EntradaConsole.LerOuCancelar("Digite o Nome", s => !string.IsNullOrWhiteSpace(s), "Nome inválido.");
+    public string? LerNome() => EntradaConsole.LerOuCancelar("Digite o Nome", s => Validador.TryNormalizarNome(s, out _, out _), "Nome inválido: use de 2 a 50 caracteres, apenas letras, espaços, apóstrofo, hífen e ponto.");
 
-    public string? LerEmail() => EntradaConsole.LerOuCancelar("Digite o Email", s => Regex.IsMatch(s, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"), "Email inválido.");
+    public string? LerEmail() => EntradaConsole.LerOuCancelar("Digite o Email", s => Validador.TryNormalizarEmail(s, out _, out _), "Email inválido.");
 
-    public string? LerCpf() => EntradaConsole.LerOuCancelar("Digite o CPF", s => s.Length == 11 && s.All(char.IsDigit), "CPF inválido. Digite apenas os 11 números.");
+    public string? LerCpf() => EntradaConsole.LerOuCancelar("Digite o CPF", s => Validador.TryNormalizarCpf(s, out _, out _), "CPF inválido. Confira os 11 números (pode digitar com pontos e traço).");
 
-    public string? LerSenha() => EntradaConsole.LerOuCancelar("Digite a Senha", s => s.Length >= 6, "A senha deve ter pelo menos 6 caracteres.");
+    public string? LerSenha() => EntradaConsole.LerOuCancelar("Digite a Senha", s => Validador.TryValidarSenha(s, out _), $"A senha deve ter de {Validador.SENHA_MIN} a {Validador.SENHA_MAX} caracteres, com letra maiúscula, minúscula e número (e não pode ser uma senha comum).");
 
     public string? LerOpcaoPlano()
     {

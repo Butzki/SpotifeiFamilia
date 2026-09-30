@@ -1,3 +1,4 @@
+using SpotifeiFamilia.Business;
 using SpotifeiFamilia.Model;
 
 namespace SpotifeiFamilia.Views;
@@ -41,11 +42,11 @@ public class FamiliaView
             Console.WriteLine($"[{d.Id}] {d.NomeUsuario}");
     }
 
-    public string? LerNomeDependente() => EntradaConsole.LerOuCancelar("Nome do novo membro", s => !string.IsNullOrWhiteSpace(s), "Nome inválido.");
+    public string? LerNomeDependente() => EntradaConsole.LerOuCancelar("Nome do novo membro", s => Validador.TryNormalizarNome(s, out _, out _), "Nome inválido: use de 2 a 50 caracteres, apenas letras, espaços, apóstrofo, hífen e ponto.");
 
-    public string? LerEmailDependente() => EntradaConsole.LerOuCancelar("E-mail do novo membro", s => System.Text.RegularExpressions.Regex.IsMatch(s, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"), "E-mail inválido.");
+    public string? LerEmailDependente() => EntradaConsole.LerOuCancelar("E-mail do novo membro", s => Validador.TryNormalizarEmail(s, out _, out _), "E-mail inválido.");
 
-    public string? LerSenhaDependente() => EntradaConsole.LerOuCancelar("Senha para o novo membro", s => s.Length >= 6, "A senha deve ter pelo menos 6 caracteres.");
+    public string? LerSenhaDependente() => EntradaConsole.LerOuCancelar("Senha para o novo membro", s => Validador.TryValidarSenha(s, out _), $"A senha deve ter de {Validador.SENHA_MIN} a {Validador.SENHA_MAX} caracteres, com letra maiúscula, minúscula e número (e não pode ser uma senha comum).");
 
     public void CadastroDependenteCancelado() => Console.WriteLine("Cadastro de membro cancelado.");
 

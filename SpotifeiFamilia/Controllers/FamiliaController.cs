@@ -149,7 +149,7 @@ public class FamiliaController(int usuarioId)
 
         try
         {
-            view.ExibirHistorico(FamiliaBusiness.ListarHistoricoPorUsuario(contaFilhaId.Value));
+            view.ExibirHistorico(FamiliaBusiness.ListarHistoricoDeDependente(usuarioId, contaFilhaId.Value));
         }
         catch (Exception ex)
         {
