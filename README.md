@@ -58,7 +58,7 @@ O schema (`bd.sql`) continua sendo a fonte da verdade do banco — o `SpotifeiFa
 ## Como rodar
 
 1. Tenha um MySQL local rodando (ajuste a connection string em `SpotifeiFamilia.Data/SpotifeiFamiliaContext.cs` se necessário).
-2. Execute `bd.sql` para criar o schema e depois `popular_bd.sql` para os dados de teste.
+2. Execute `bd.sql` — ele cria o schema completo e já popula com os dados de teste, tudo em um único script idempotente (pode rodar de novo sem duplicar nada).
 3. Rode o projeto:
 
    ```
@@ -66,7 +66,3 @@ O schema (`bd.sql`) continua sendo a fonte da verdade do banco — o `SpotifeiFa
    ```
 
 4. No cadastro, será necessário escanear o QR code exibido (ou usar a chave manual) com um app autenticador como Google Authenticator ou Authy para configurar o 2FA.
-
-### Já tinha o banco criado antes?
-
-Se o schema `spotifeio` já existia no seu MySQL de uma versão anterior deste projeto (antes das colunas de 2FA, bloqueio por tentativas, Spotifei Família e conteúdo explícito existirem em `bd.sql`), rode `atualizar_schema.sql` uma única vez — ele só adiciona as colunas que faltam, sem apagar nada. Numa instalação nova (banco criado do zero com o `bd.sql` atual), esse script não é necessário.
