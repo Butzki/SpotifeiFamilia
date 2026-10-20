@@ -5,7 +5,11 @@ namespace SpotifeiFamilia.Data;
 
 public class SpotifeiFamiliaContext : DbContext
 {
-    private static string connectionString = "Server=127.0.0.1;Database=spotifeio;;Uid=root;Pwd=1234;";
+    // Em produção, defina a variável de ambiente SPOTIFEIFAMILIA_DB_CONNECTION; sem ela,
+    // cai no padrão de desenvolvimento local abaixo.
+    private static readonly string connectionString =
+        Environment.GetEnvironmentVariable("SPOTIFEIFAMILIA_DB_CONNECTION")
+        ?? "Server=127.0.0.1;Database=spotifeio;;Uid=root;Pwd=1234;";
 
     public DbSet<Usuario> Usuarios { get; set; }
     public DbSet<Plano> Planos { get; set; }

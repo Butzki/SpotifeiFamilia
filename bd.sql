@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS `spotifeio`.`users` (
   `nome_usuario` VARCHAR(50) NULL DEFAULT NULL,
   `CPF` VARCHAR(11) NULL DEFAULT NULL,
   `e_mail` VARCHAR(100) NULL DEFAULT NULL,
-  `senha` VARCHAR(8) NULL DEFAULT NULL,
+  `senha` VARCHAR(255) NULL DEFAULT NULL COMMENT 'Hash PBKDF2-SHA256 (formato PBKDF2-SHA256$iteracoes$saltBase64$hashBase64); contas legadas podem ter senha em texto puro até o próximo login.',
   `totp_secret` VARCHAR(64) NULL DEFAULT NULL COMMENT 'Chave secreta TOTP (Base32) usada para gerar/validar o código do segundo fator de autenticação (2FA).',
   `tentativas_login` INT NOT NULL DEFAULT 0 COMMENT 'Contador de tentativas de login incorretas consecutivas. Zerado a cada login bem-sucedido.',
   `bloqueado` TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'Bloqueio manual/permanente feito pelo administrador diretamente no banco.',

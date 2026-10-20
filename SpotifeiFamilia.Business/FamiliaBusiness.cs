@@ -34,18 +34,7 @@ public static class FamiliaBusiness
             return true;
         }
 
-        // ContaBloqueada já zerou no banco um bloqueio expirado, mas o objeto em memória ainda
-        // traz o contador antigo — BloqueadoAte preenchido aqui significa "expirou e foi zerado".
-        int tentativas = (usuario.BloqueadoAte.HasValue ? 0 : usuario.TentativasLogin) + 1;
-
-        if (tentativas >= AutenticacaoBusiness.MAX_TENTATIVAS)
-        {
-            AutenticacaoBusiness.BloquearConta(usuarioId);
-            throw new RegraNegocioException(
-                $"Limite de tentativas atingido. Sua conta foi bloqueada por {AutenticacaoBusiness.TEMPO_BLOQUEIO_MINUTOS} minutos.");
-        }
-
-        AutenticacaoBusiness.RegistrarFalhaLogin(usuarioId, tentativas);
+        AutenticacaoBusiness.ProcessarFalhaLogin(usuario);
         return false;
     }
 

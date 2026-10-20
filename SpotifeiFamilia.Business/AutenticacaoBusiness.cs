@@ -17,14 +17,46 @@ public static class AutenticacaoBusiness
     // Secret TOTP em Base32 (o TwoFactorAuth.Net gera 16 caracteres por padrão; a coluna aceita até 64).
     private static readonly Regex SecretBase32 = new(@"^[A-Z2-7]{16,64}$", RegexOptions.Compiled);
 
+    // Usada pelos fluxos que não recebem (nem precisam customizar) uma instância própria de
+    // TotpService, como a verificação de código no login da WebApi.
+    private static readonly TotpService _totp = new();
+
     /// <summary>
-    /// Cadastro de titular. Ordem proposital: primeiro tudo o que dá pra validar sem I/O,
-    /// depois unicidade e plano, e só então o 2FA (que abre o QR code no navegador) — assim
-    /// ninguém configura o autenticador para um cadastro que já estava fadado a falhar.
+    /// Cadastro de titular (fluxo interativo, usado pelo console). Ordem proposital: primeiro
+    /// tudo o que dá pra validar sem I/O, depois unicidade e plano, e só então o 2FA (que abre o
+    /// QR code no navegador e espera confirmação digitada) — assim ninguém configura o
+    /// autenticador para um cadastro que já estava fadado a falhar.
     /// Erros de dado lançam <see cref="RegraNegocioException"/>. Plano inexistente e 2FA não
     /// confirmado continuam como <see cref="InvalidOperationException"/> (contrato do Controller).
     /// </summary>
     public static void RegistrarUsuario(string nome, string email, string cpf, string senha, NomePlano nomePlano, TotpService totp)
+    {
+        var (nomeValido, emailValido, cpfValido, planoId) = ValidarCadastro(nome, email, cpf, senha, nomePlano);
+
+        if (!totp.ConfigurarNovoTotp(emailValido, out string totpSecret))
+            throw new InvalidOperationException("2FA obrigatório para concluir o cadastro.");
+
+        CadastrarNoBanco(nomeValido, emailValido, cpfValido, senha, planoId, totpSecret);
+    }
+
+    /// <summary>
+    /// Cadastro via WebApi: não há tela esperando o código de 6 dígitos no mesmo request em que
+    /// o QR code é mostrado, então a chave já é gerada e gravada aqui; o cliente confirma que
+    /// configurou o autenticador corretamente no primeiro login seguinte, que exige o código certo.
+    /// </summary>
+    public static (int UsuarioId, string TotpSecret, byte[] QrCodePng) RegistrarUsuarioApi(
+        string nome, string email, string cpf, string senha, NomePlano nomePlano, TotpService totp)
+    {
+        var (nomeValido, emailValido, cpfValido, planoId) = ValidarCadastro(nome, email, cpf, senha, nomePlano);
+
+        var (secret, _, qrCodePng) = totp.GerarSecret(emailValido);
+        int usuarioId = CadastrarNoBanco(nomeValido, emailValido, cpfValido, senha, planoId, secret);
+
+        return (usuarioId, secret, qrCodePng);
+    }
+
+    private static (string Nome, string Email, string Cpf, int PlanoId) ValidarCadastro(
+        string nome, string email, string cpf, string senha, NomePlano nomePlano)
     {
         nome = Validador.NormalizarNome(nome);
         email = Validador.NormalizarEmail(email);
@@ -42,26 +74,26 @@ public static class AutenticacaoBusiness
 
         int? planoId = PlanoRepository.BuscarIdPorNome(nomePlano);
         if (planoId == null)
-        {
             throw new InvalidOperationException($"Plano {nomePlano} não encontrado.");
-        }
 
-        if (!totp.ConfigurarNovoTotp(email, out string totpSecret))
+        return (nome, email, cpf, planoId.Value);
+    }
+
+    private static int CadastrarNoBanco(string nome, string email, string cpf, string senha, int planoId, string totpSecret)
+    {
+        var usuario = new Usuario
         {
-            throw new InvalidOperationException("2FA obrigatório para concluir o cadastro.");
-        }
+            NomeUsuario = nome,
+            Cpf = cpf,
+            Email = email,
+            Senha = SenhaHasher.Hash(senha),
+            TotpSecret = totpSecret,
+            PlanoId = planoId
+        };
 
         try
         {
-            UsuarioRepository.Cadastrar(new Usuario
-            {
-                NomeUsuario = nome,
-                Cpf = cpf,
-                Email = email,
-                Senha = SenhaHasher.Hash(senha),
-                TotpSecret = totpSecret,
-                PlanoId = planoId
-            });
+            UsuarioRepository.Cadastrar(usuario);
         }
         catch (Exception ex) when (ErrosBanco.ViolacaoDeUnicidade(ex))
         {
@@ -69,6 +101,8 @@ public static class AutenticacaoBusiness
             // os índices UNIQUE do banco são a garantia final.
             throw new RegraNegocioException("E-mail ou CPF já cadastrado.");
         }
+
+        return usuario.Id;
     }
 
     public static Usuario? BuscarUsuario(string email)
@@ -151,6 +185,32 @@ public static class AutenticacaoBusiness
         }
     }
 
+    /// <summary>
+    /// Confere o código TOTP de 6 dígitos contra o secret gravado da conta. Usada pelos fluxos
+    /// onde não há uma tela interativa pedindo o código em loop (a WebApi, por exemplo): aqui
+    /// é uma verificação única por tentativa de login.
+    /// </summary>
+    public static bool CodigoTotpValido(Usuario usuario, string? codigo)
+    {
+        if (string.IsNullOrEmpty(usuario.TotpSecret) || string.IsNullOrWhiteSpace(codigo))
+            return false;
+
+        return _totp.VerificarCodigo(usuario.TotpSecret, codigo.Replace(" ", ""));
+    }
+
+    /// <summary>
+    /// Gera e grava uma chave TOTP nova para uma conta que ainda não tem 2FA configurado (contas
+    /// antigas, ou dependentes adicionados pelo painel de família) tentando logar pela WebApi.
+    /// Sem uma tela esperando a confirmação como no console, é o login seguinte com o código
+    /// correto que confirma a configuração.
+    /// </summary>
+    public static (string Secret, byte[] QrCodePng) IniciarConfiguracaoTotp(Usuario usuario)
+    {
+        var (secret, _, qrCodePng) = _totp.GerarSecret(usuario.Email ?? usuario.NomeUsuario ?? "SpotifeiFamilia");
+        AtualizarTotpSecret(usuario.Id, secret);
+        return (secret, qrCodePng);
+    }
+
     public static void RegistrarFalhaLogin(int usuarioId, int tentativas)
     {
         UsuarioRepository.IncrementarTentativas(usuarioId, tentativas);
@@ -164,6 +224,28 @@ public static class AutenticacaoBusiness
     public static void ResetarTentativas(int usuarioId)
     {
         UsuarioRepository.ResetarTentativas(usuarioId);
+    }
+
+    /// <summary>
+    /// Contabiliza mais uma tentativa de senha incorreta e bloqueia a conta ao estourar
+    /// <see cref="MAX_TENTATIVAS"/>. Centraliza a regra usada tanto pelo login da WebApi quanto
+    /// pela reautenticação antes do painel de família (<see cref="FamiliaBusiness.Reautenticar"/>).
+    /// Lança <see cref="RegraNegocioException"/> quando esta tentativa acabou de bloquear a conta.
+    /// </summary>
+    public static void ProcessarFalhaLogin(Usuario usuario)
+    {
+        // BloqueadoAte preenchido aqui (depois de ContaBloqueada já ter zerado um bloqueio
+        // expirado no banco) significa "o bloqueio anterior expirou e foi zerado agora".
+        int tentativas = (usuario.BloqueadoAte.HasValue ? 0 : usuario.TentativasLogin) + 1;
+
+        if (tentativas >= MAX_TENTATIVAS)
+        {
+            BloquearConta(usuario.Id);
+            throw new RegraNegocioException(
+                $"Limite de tentativas atingido. Sua conta foi bloqueada por {TEMPO_BLOQUEIO_MINUTOS} minutos.");
+        }
+
+        RegistrarFalhaLogin(usuario.Id, tentativas);
     }
 
     /// <summary>

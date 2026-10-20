@@ -8,20 +8,34 @@ public class TotpService
 {
     private static readonly TwoFactorAuth _tfa = new TwoFactorAuth("Spotifei Família");
 
+    /// <summary>
+    /// Gera um novo segredo TOTP e o QR code (PNG) correspondente, sem nenhuma interação de
+    /// console/navegador. Usado tanto pelo fluxo interativo (<see cref="ConfigurarNovoTotp"/>)
+    /// quanto pela WebApi, que devolve o QR direto na resposta em vez de abrir um navegador local.
+    /// </summary>
+    public (string Secret, string OtpAuthUri, byte[] QrCodePng) GerarSecret(string label)
+    {
+        string secret = _tfa.CreateSecret();
+        string otpauthUri = _tfa.GetQrText(label, secret);
+
+        using var qrGenerator = new QRCodeGenerator();
+        using var qrCodeData = qrGenerator.CreateQrCode(otpauthUri, QRCodeGenerator.ECCLevel.Q);
+        var pngQrCode = new PngByteQRCode(qrCodeData);
+        byte[] qrCodePng = pngQrCode.GetGraphic(10);
+
+        return (secret, otpauthUri, qrCodePng);
+    }
+
     public bool ConfigurarNovoTotp(string label, out string secret)
     {
-        secret = _tfa.CreateSecret();
-        string otpauthUri = _tfa.GetQrText(label, secret);
+        var (secretGerado, _, qrBytes) = GerarSecret(label);
+        secret = secretGerado;
 
         Console.WriteLine("\n--- CONFIGURAÇÃO DO SEGUNDO FATOR DE AUTENTICAÇÃO (2FA) ---");
 
         string? htmlPath = null;
         try
         {
-            using var qrGenerator = new QRCodeGenerator();
-            using var qrCodeData = qrGenerator.CreateQrCode(otpauthUri, QRCodeGenerator.ECCLevel.Q);
-            var pngQrCode = new PngByteQRCode(qrCodeData);
-            byte[] qrBytes = pngQrCode.GetGraphic(10);
             string qrBase64 = Convert.ToBase64String(qrBytes);
 
             htmlPath = Path.Combine(Path.GetTempPath(), $"spotifei_2fa_{Guid.NewGuid():N}.html");
@@ -82,4 +96,12 @@ public class TotpService
     {
         return _tfa.VerifyCode(secret, codigo, discrepancy: 1);
     }
+
+    /// <summary>
+    /// Calcula o código TOTP válido agora para um secret já configurado. Uso restrito a
+    /// ferramentas de desenvolvimento/teste local (ex.: <c>SpotifeiFamilia.Tools</c>): quem chama
+    /// isso já tem acesso direto ao banco e ao secret, então não é um jeito de burlar o 2FA de
+    /// ninguém — só evita digitar o código do autenticador a cada teste manual da API.
+    /// </summary>
+    public string GerarCodigoAtual(string secret) => _tfa.GetCode(secret);
 }
