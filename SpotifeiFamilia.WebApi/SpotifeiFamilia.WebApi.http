@@ -1,6 +1,147 @@
-@SpotifeiFamilia.WebApi_HostAddress = http://localhost:5066
+@SpotifeiFamilia.WebApi_HostAddress = https://localhost:7288
+@token = COLE_AQUI_O_TOKEN_DO_LOGIN
 
-GET {{SpotifeiFamilia.WebApi_HostAddress}}/weatherforecast/
-Accept: application/json
+### Healthcheck
+GET {{SpotifeiFamilia.WebApi_HostAddress}}/api/health
 
-###
+### Cadastro (devolve o QR code/chave do 2FA; escaneie antes do primeiro login)
+POST {{SpotifeiFamilia.WebApi_HostAddress}}/api/autenticacao/cadastro
+Content-Type: application/json
+
+{
+  "nome": "Maria Teste",
+  "email": "maria.teste@exemplo.com",
+  "cpf": "52998224725",
+  "senha": "MinhaSenhaForte1",
+  "plano": "PREMIUM"
+}
+
+### Login — 1ª chamada de uma conta sem 2FA ainda configurado devolve o QR code
+POST {{SpotifeiFamilia.WebApi_HostAddress}}/api/autenticacao/login
+Content-Type: application/json
+
+{
+  "email": "maria.teste@exemplo.com",
+  "senha": "MinhaSenhaForte1"
+}
+
+### Login — com o código de 6 dígitos do app autenticador
+POST {{SpotifeiFamilia.WebApi_HostAddress}}/api/autenticacao/login
+Content-Type: application/json
+
+{
+  "email": "maria.teste@exemplo.com",
+  "senha": "MinhaSenhaForte1",
+  "codigo2fa": "000000"
+}
+
+### Músicas do usuário
+GET {{SpotifeiFamilia.WebApi_HostAddress}}/api/musicas/8
+Authorization: Bearer {{token}}
+
+### Buscar músicas
+GET {{SpotifeiFamilia.WebApi_HostAddress}}/api/musicas/buscar?usuarioId=8&termo=Chamas
+Authorization: Bearer {{token}}
+
+### Reproduzir música
+POST {{SpotifeiFamilia.WebApi_HostAddress}}/api/musicas/reproduzir
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "usuarioId": 8,
+  "musicaId": 1
+}
+
+### Listar playlists
+GET {{SpotifeiFamilia.WebApi_HostAddress}}/api/playlists/8
+Authorization: Bearer {{token}}
+
+### Criar playlist
+POST {{SpotifeiFamilia.WebApi_HostAddress}}/api/playlists
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "usuarioId": 8,
+  "nome": "Minha Playlist"
+}
+
+### Músicas de uma playlist
+GET {{SpotifeiFamilia.WebApi_HostAddress}}/api/playlists/8/1/musicas
+Authorization: Bearer {{token}}
+
+### Adicionar música a uma playlist
+POST {{SpotifeiFamilia.WebApi_HostAddress}}/api/playlists/1/musicas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "usuarioId": 8,
+  "musicaId": 2
+}
+
+### Listar dependentes (Spotifei Família)
+GET {{SpotifeiFamilia.WebApi_HostAddress}}/api/familia/8/dependentes
+Authorization: Bearer {{token}}
+
+### Adicionar dependente
+POST {{SpotifeiFamilia.WebApi_HostAddress}}/api/familia/8/dependentes
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Filho Teste",
+  "email": "filho.teste@exemplo.com",
+  "senha": "SenhaDoFilho1"
+}
+
+### Remover dependente
+DELETE {{SpotifeiFamilia.WebApi_HostAddress}}/api/familia/8/dependentes/9
+Authorization: Bearer {{token}}
+
+### Histórico de reprodução de um dependente
+GET {{SpotifeiFamilia.WebApi_HostAddress}}/api/familia/8/dependentes/9/historico
+Authorization: Bearer {{token}}
+
+### Reautenticar antes de abrir o painel de família
+POST {{SpotifeiFamilia.WebApi_HostAddress}}/api/familia/8/reautenticar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "senha": "paisenha"
+}
+
+### Listar restrições de um dependente
+GET {{SpotifeiFamilia.WebApi_HostAddress}}/api/familia/8/dependentes/9/restricoes
+Authorization: Bearer {{token}}
+
+### Bloquear artista para um dependente
+POST {{SpotifeiFamilia.WebApi_HostAddress}}/api/familia/8/dependentes/9/restricoes/artistas/3
+Authorization: Bearer {{token}}
+
+### Desbloquear artista para um dependente
+DELETE {{SpotifeiFamilia.WebApi_HostAddress}}/api/familia/8/dependentes/9/restricoes/artistas/3
+Authorization: Bearer {{token}}
+
+### Bloquear conteúdo explícito para um dependente
+POST {{SpotifeiFamilia.WebApi_HostAddress}}/api/familia/8/dependentes/9/restricoes/explicito
+Authorization: Bearer {{token}}
+
+### Desbloquear conteúdo explícito para um dependente
+DELETE {{SpotifeiFamilia.WebApi_HostAddress}}/api/familia/8/dependentes/9/restricoes/explicito
+Authorization: Bearer {{token}}
+
+### Consultar limite diário de um dependente
+GET {{SpotifeiFamilia.WebApi_HostAddress}}/api/familia/8/dependentes/9/limite-diario
+Authorization: Bearer {{token}}
+
+### Definir limite diário de um dependente
+PUT {{SpotifeiFamilia.WebApi_HostAddress}}/api/familia/8/dependentes/9/limite-diario
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "limite": 10
+}

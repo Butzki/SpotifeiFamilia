@@ -13,10 +13,20 @@ set "STEPNUM=0"
 
 set "BASE_URL=https://localhost:7288"
 set "WEBAPI_DIR=%~dp0SpotifeiFamilia.WebApi"
+set "TOOLS_DIR=%~dp0SpotifeiFamilia.Tools"
 set "USUARIO_ID=8"
 set "EMAIL=pai@gmail.com"
 set "SENHA=paisenha"
 set "PLAYLIST_NOME=Playlist de Teste %TIME:~6,2%%TIME:~9,2%%RANDOM%"
+
+REM O login agora exige o codigo de 6 digitos do app autenticador (2FA). Se nao for passado
+REM como parametro, calcula na hora a partir do secret ja salvo no banco local para %EMAIL%
+REM (SpotifeiFamilia.Tools) -- so funciona porque e a propria conta de teste local.
+if "%~1"=="" (
+    for /f "delims=" %%C in ('dotnet run --project "%TOOLS_DIR%" -- %EMAIL% 2^>nul') do set "CODIGO_2FA=%%C"
+) else (
+    set "CODIGO_2FA=%~1"
+)
 
 cls
 echo.
@@ -56,12 +66,17 @@ if "%HEALTH_STATUS%"=="200" (
 call :header "GET /api/health"
 curl -s -k -w "\n   [HTTP %%{http_code}]\n" %BASE_URL%/api/health
 
+if not defined CODIGO_2FA (
+    echo    [ERRO] Informe o codigo de 6 digitos do app autenticador: testar_api.bat ^<codigo^>
+    goto FIM
+)
+
 call :header "POST /api/autenticacao/login  (%EMAIL%)"
 curl -s -k -w "\n   [HTTP %%{http_code}]\n" -X POST %BASE_URL%/api/autenticacao/login ^
     -H "Content-Type: application/json" ^
-    -d "{\"email\":\"%EMAIL%\",\"senha\":\"%SENHA%\"}"
+    -d "{\"email\":\"%EMAIL%\",\"senha\":\"%SENHA%\",\"codigo2fa\":\"%CODIGO_2FA%\"}"
 
-curl -s -k -X POST %BASE_URL%/api/autenticacao/login -H "Content-Type: application/json" -d "{\"email\":\"%EMAIL%\",\"senha\":\"%SENHA%\"}" > "%TEMP%\login_response.json"
+curl -s -k -X POST %BASE_URL%/api/autenticacao/login -H "Content-Type: application/json" -d "{\"email\":\"%EMAIL%\",\"senha\":\"%SENHA%\",\"codigo2fa\":\"%CODIGO_2FA%\"}" > "%TEMP%\login_response.json"
 powershell -NoProfile -Command "(Get-Content -Raw '%TEMP%\login_response.json' | ConvertFrom-Json).token" > "%TEMP%\jwt_token.txt"
 set /p JWT_TOKEN=<"%TEMP%\jwt_token.txt"
 

@@ -14,6 +14,7 @@
   <ItemGroup>
     <ProjectReference Include="..\SpotifeiFamilia.Business\SpotifeiFamilia.Business.csproj" />
     <ProjectReference Include="..\SpotifeiFamilia.Model\SpotifeiFamilia.Model.csproj" />
+    <ProjectReference Include="..\SpotifeiFamilia.Service\SpotifeiFamilia.Service.csproj" />
   </ItemGroup>
 
 </Project>
